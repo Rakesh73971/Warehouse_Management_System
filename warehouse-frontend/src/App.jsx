@@ -10,6 +10,7 @@ import Products from "./pages/Products";
 import Inventory from "./pages/Inventory";
 import Orders from "./pages/Order";
 import Login from "./pages/Login";
+import Register from "./pages/Register";
 
 function App() {
   return (
@@ -18,6 +19,7 @@ function App() {
 
         {/* Login */}
         <Route path="/" element={<Login />} />
+        <Route path="/register" element={<Register />} />
 
         {/* Protected Pages */}
         <Route path="/app" element={<Layout />}>
