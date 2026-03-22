@@ -1,0 +1,11 @@
+Django==4.2.28
+djangorestframework
+django-filter==23.5
+djangorestframework-simplejwt
+psycopg2-binary
+gunicorn
+pytest
+pytest-django
+python-dotenv
+drf_yasg
+django_redis
