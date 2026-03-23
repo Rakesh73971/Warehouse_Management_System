@@ -1,0 +1,27 @@
+/* Full layout */
+.layout {
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Body */
+.layout-body {
+  display: flex;
+  flex: 1;
+}
+
+/* Sidebar space */
+.layout-body > *:first-child {
+  width: 220px;
+  background: #1e293b;
+  color: white;
+}
+
+/* Content */
+.content {
+  flex: 1;
+  padding: 20px;
+  background: #f1f5f9;
+  overflow-y: auto;
+}

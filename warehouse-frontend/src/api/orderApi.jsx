@@ -3,7 +3,7 @@ import API from "./axios";
 // ================= ORDERS =================
 
 // GET all orders
-export const getOrders = () => API.get("/orders/");
+export const getOrders = () => API.get("/order/");
 
 // GET single order
 export const getOrder = (id) => API.get(`/orders/${id}/`);

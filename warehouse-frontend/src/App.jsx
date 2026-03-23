@@ -1,4 +1,5 @@
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+
 import Layout from "./Layout";
 
 import Dashboard from "./pages/Dashboard";
@@ -12,17 +13,33 @@ import Orders from "./pages/Order";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
 
+// 🔐 Protected Route
+const PrivateRoute = ({ children }) => {
+  const token = localStorage.getItem("token");
+  return token ? children : <Navigate to="/" />;
+};
+
 function App() {
   return (
     <BrowserRouter>
       <Routes>
 
-        {/* Login */}
+        {/* Auth Pages */}
         <Route path="/" element={<Login />} />
         <Route path="/register" element={<Register />} />
 
-        {/* Protected Pages */}
-        <Route path="/app" element={<Layout />}>
+        {/* Protected Layout */}
+        <Route
+          path="/app"
+          element={
+            <PrivateRoute>
+              <Layout />
+            </PrivateRoute>
+          }
+        >
+          {/* Default redirect */}
+          <Route index element={<Navigate to="dashboard" />} />
+
           <Route path="dashboard" element={<Dashboard />} />
           <Route path="warehouses" element={<Warehouses />} />
           <Route path="zones" element={<Zones />} />
@@ -32,6 +49,9 @@ function App() {
           <Route path="inventory" element={<Inventory />} />
           <Route path="orders" element={<Orders />} />
         </Route>
+
+        {/* 404 Page */}
+        <Route path="*" element={<h2>Page Not Found</h2>} />
 
       </Routes>
     </BrowserRouter>

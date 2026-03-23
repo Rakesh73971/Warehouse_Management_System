@@ -1,33 +1,28 @@
 import { useState } from "react";
-import { useNavigate, Link } from "react-router-dom";
 import API from "../api/axios";
+import { useNavigate, Link } from "react-router-dom";
 import "./Login.css";
 
 function Login() {
-  const navigate = useNavigate();
-
   const [form, setForm] = useState({
     email: "",
     password: "",
   });
 
-  const [error, setError] = useState("");
+  const navigate = useNavigate();
 
-  const handleLogin = async () => {
+  const handleLogin = async (e) => {
+    e.preventDefault(); 
     try {
-      const res = await API.post("/accounts/login/", form);
+      const res = await API.post("accounts/login/", form);
 
-      // JWT tokens
-      localStorage.setItem("access", res.data.access);
-      localStorage.setItem("refresh", res.data.refresh);
+      localStorage.setItem("token", res.data.access);
 
-      alert("Login Success ✅");
+      alert("Login Success");
 
-      navigate("/app/dashboard");
-
+      navigate("/app/dashboard"); // ✅ correct route
     } catch (err) {
-      console.error(err);
-      setError("Invalid credentials ❌");
+      alert("Login Failed");
     }
   };
 
@@ -36,28 +31,31 @@ function Login() {
       <div className="login-box">
         <h3>Login</h3>
 
-        {error && <p style={{ color: "red" }}>{error}</p>}
+        {/* ✅ FORM ADDED */}
+        <form onSubmit={handleLogin}>
+          <input
+            type="email"
+            placeholder="Email"
+            required
+            onChange={(e) =>
+              setForm({ ...form, email: e.target.value })
+            }
+          />
 
-        <input
-          type="email"
-          placeholder="Email"
-          onChange={(e) =>
-            setForm({ ...form, email: e.target.value })
-          }
-        />
+          <input
+            type="password"
+            placeholder="Password"
+            required
+            onChange={(e) =>
+              setForm({ ...form, password: e.target.value })
+            }
+          />
 
-        <input
-          type="password"
-          placeholder="Password"
-          onChange={(e) =>
-            setForm({ ...form, password: e.target.value })
-          }
-        />
-
-        <button onClick={handleLogin}>Login</button>
+          <button type="submit">Login</button>
+        </form>
 
         <p>
-          Don't have an account?{" "}
+          Don’t have an account?{" "}
           <Link to="/register">Register</Link>
         </p>
       </div>

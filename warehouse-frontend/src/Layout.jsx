@@ -1,20 +1,25 @@
 import Navbar from "./components/Navbar";
 import Sidebar from "./components/Sidebar";
 import { Outlet } from "react-router-dom";
+import "./Layout.css";
 
 function Layout() {
   return (
-    <>
+    <div className="layout">
+      {/* Top Navbar */}
       <Navbar />
 
-      <div className="d-flex">
+      {/* Main Content */}
+      <div className="layout-body">
+        {/* Sidebar */}
         <Sidebar />
 
-        <div className="p-4 w-100">
+        {/* Page Content */}
+        <div className="content">
           <Outlet />
         </div>
       </div>
-    </>
+    </div>
   );
 }
 

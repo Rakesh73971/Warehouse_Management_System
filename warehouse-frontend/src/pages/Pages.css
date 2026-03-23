@@ -1,0 +1,54 @@
+/* Page Layout */
+.page {
+  padding: 20px;
+  color: #333;
+}
+
+/* Title */
+.page h2 {
+  margin-bottom: 20px;
+  font-weight: bold;
+}
+
+/* Grid */
+.card-container {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 20px;
+}
+
+/* Card Style */
+.card {
+  background: white;
+  border-radius: 12px;
+  padding: 15px;
+  box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+  transition: 0.3s;
+}
+
+/* Hover effect */
+.card:hover {
+  transform: translateY(-5px) scale(1.02);
+  box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+}
+
+/* Text */
+.card h4 {
+  margin-bottom: 10px;
+  color: #4e73df;
+}
+
+.card p {
+  margin: 5px 0;
+}
+
+/* Status colors */
+.green {
+  color: green;
+  font-weight: bold;
+}
+
+.red {
+  color: red;
+  font-weight: bold;
+}

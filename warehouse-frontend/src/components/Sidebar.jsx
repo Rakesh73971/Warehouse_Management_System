@@ -1,45 +1,37 @@
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 
 function Sidebar() {
+  const location = useLocation(); // To highlight active link
+
+  const links = [
+    { path: "/app/dashboard", label: "Dashboard" },
+    { path: "/app/warehouses", label: "Warehouses" },
+    { path: "/app/zones", label: "Zones" },
+    { path: "/app/racks", label: "Racks" },
+    { path: "/app/bins", label: "Bins" },
+    { path: "/app/products", label: "Products" },
+    { path: "/app/inventory", label: "Inventory" },
+    { path: "/app/orders", label: "Orders" },
+  ];
+
   return (
     <div
-      className="bg-light border-end"
-      style={{ width: "250px", height: "100vh" }}
+      className="bg-light border-end d-flex flex-column"
+      style={{ width: "220px", minHeight: "100vh" }}
     >
-      <div className="list-group list-group-flush">
-
-        <Link to="/dashboard" className="list-group-item list-group-item-action">
-          Dashboard
-        </Link>
-
-        <Link to="/warehouses" className="list-group-item list-group-item-action">
-          Warehouses
-        </Link>
-
-        <Link to="/zones" className="list-group-item list-group-item-action">
-          Zones
-        </Link>
-
-        <Link to="/racks" className="list-group-item list-group-item-action">
-          Racks
-        </Link>
-
-        <Link to="/bins" className="list-group-item list-group-item-action">
-          Bins
-        </Link>
-
-        <Link to="/products" className="list-group-item list-group-item-action">
-          Products
-        </Link>
-
-        <Link to="/inventory" className="list-group-item list-group-item-action">
-          Inventory
-        </Link>
-
-        <Link to="/orders" className="list-group-item list-group-item-action">
-          Orders
-        </Link>
-
+      <div className="p-3 fs-5 fw-bold border-bottom">Menu</div>
+      <div className="list-group list-group-flush flex-grow-1">
+        {links.map((link) => (
+          <Link
+            key={link.path}
+            to={link.path}
+            className={`list-group-item list-group-item-action ${
+              location.pathname === link.path ? "active fw-bold" : ""
+            }`}
+          >
+            {link.label}
+          </Link>
+        ))}
       </div>
     </div>
   );
