@@ -14,37 +14,45 @@ from .pagination import DefaultPageSize
 class CacheListMixin:
 
     @method_decorator(cache_page(60 * 5))
-    @method_decorator(vary_on_headers("Authorization"))
+    @method_decorator(vary_on_headers("Authorization", "Accept"))
     def list(self, request, *args, **kwargs):
         return super().list(request, *args, **kwargs)
 
 #Warehouse Viewset
-class WarehouseViewSet(CacheListMixin,viewsets.ModelViewSet):
-    queryset = Warehouse.objects.select_related('manager').all()
+class WarehouseViewSet(CacheListMixin, viewsets.ModelViewSet):
+    queryset = Warehouse.objects.select_related('manager').prefetch_related(
+        'zones__racks__bins'
+    )
     serializer_class = WarehouseSerializer
     permission_classes = [IsAuthenticated]
 
     filter_backends = [DjangoFilterBackend]
     pagination_class = DefaultPageSize
-    filterset_fields = ['is_active','location']
+    filterset_fields = ['is_active', 'location']
 
 
 #Zone ViewSet
-class ZoneViewSet(CacheListMixin,viewsets.ModelViewSet):
-    queryset = Zone.objects.select_related('warehouse','storage_type').all()
+class ZoneViewSet(CacheListMixin, viewsets.ModelViewSet):
+    queryset = Zone.objects.select_related('warehouse', 'storage_type').prefetch_related(
+        'racks__bins'
+    )
     serializer_class = ZoneSerializer
     permission_classes = [IsAuthenticated]
+
     filter_backends = [DjangoFilterBackend]
     pagination_class = DefaultPageSize
-    filterset_fields = ['warehouse','storage_type']
+    filterset_fields = ['warehouse', 'storage_type']
 
     
 
 # Rack ViewSet
-class RackViewSet(CacheListMixin,viewsets.ModelViewSet):
-    queryset = Rack.objects.select_related('zone').all()
+class RackViewSet(CacheListMixin, viewsets.ModelViewSet):
+    queryset = Rack.objects.select_related('zone').prefetch_related(
+        'bins'
+    )
     serializer_class = RackSerializer
     permission_classes = [IsAuthenticated]
+
     filter_backends = [DjangoFilterBackend]
     pagination_class = DefaultPageSize
     filterset_fields = ['zone']

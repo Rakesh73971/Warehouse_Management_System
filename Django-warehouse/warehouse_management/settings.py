@@ -106,11 +106,21 @@ REST_FRAMEWORK = {
     ),
 }
 
+REDIS_HOST = os.getenv('REDIS_HOST')
+REDIS_PORT = os.getenv('REDIS_PORT')
+REDIS_PASSWORD = os.getenv('REDIS_PASSWORD')
+
+if REDIS_PASSWORD:
+    
+    REDIS_LOCATION = f"redis://:{REDIS_PASSWORD}@{REDIS_HOST}:{REDIS_PORT}/0"
+else:
+    
+    REDIS_LOCATION = f"redis://{REDIS_HOST}:{REDIS_PORT}/0"
 
 CACHES = {
     "default": {
         "BACKEND": "django_redis.cache.RedisCache",
-        "LOCATION": "redis://redis:6379/1",
+        "LOCATION": REDIS_LOCATION,
         "OPTIONS": {
             "CLIENT_CLASS": "django_redis.client.DefaultClient",
         }
