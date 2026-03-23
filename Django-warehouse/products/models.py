@@ -41,11 +41,12 @@ class Inventory(models.Model):
 
 class StockMovement(models.Model):
     MOVEMENT_TYPE = (
-        ('INBOUND','Inbound'),
-        ('OUTBOUND','Outbound')
+        ('INBOUND',  'Inbound'),
+        ('OUTBOUND', 'Outbound')
     )
-    product = models.ForeignKey(Product,on_delete=models.CASCADE)
-    bin = models.ForeignKey(Bin,on_delete=models.CASCADE)
-    quantity = models.IntegerField()
-    movement_type = models.CharField(max_length=10,choices=MOVEMENT_TYPE)
-    created_at = models.DateTimeField(auto_now_add=True)
+    product       = models.ForeignKey(Product, on_delete=models.CASCADE)
+    bin           = models.ForeignKey(Bin,     on_delete=models.CASCADE)
+    quantity      = models.IntegerField()
+    movement_type = models.CharField(max_length=10, choices=MOVEMENT_TYPE)
+    notes         = models.TextField(blank=True)       
+    created_at    = models.DateTimeField(auto_now_add=True)
