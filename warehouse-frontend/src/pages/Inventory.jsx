@@ -1,149 +1,170 @@
 import React, { useEffect, useState } from "react";
+import ReactDOM from "react-dom";
 import API from "../api/axios";
-import "./Inventory.css";
+import "./pages.css";
+import PageNav from "./PageNav.jsx";
+
+const toArr = (d) => Array.isArray(d) ? d : d?.results || [];
+
+function Modal({ title, onClose, onSave, saving, children }) {
+  return ReactDOM.createPortal(
+    <div
+      onClick={e => e.target === e.currentTarget && onClose()}
+      style={{ position:"fixed", inset:0, background:"rgba(26,25,22,0.52)", display:"flex", alignItems:"center", justifyContent:"center", zIndex:99999, backdropFilter:"blur(3px)" }}
+    >
+      <div
+        onClick={e => e.stopPropagation()}
+        style={{ background:"#fff", borderRadius:"12px", padding:"36px", width:"500px", maxWidth:"95vw", maxHeight:"90vh", overflowY:"auto", boxShadow:"0 24px 64px rgba(0,0,0,0.2)", position:"relative", zIndex:100000 }}
+      >
+        <h2 className="modal-title">{title}</h2>
+        {children}
+        <div className="modal-actions">
+          <button className="btn-cancel" onClick={onClose}>Cancel</button>
+          <button className="btn-save" disabled={saving} onClick={onSave}>{saving ? "Saving…" : "Save"}</button>
+        </div>
+      </div>
+    </div>,
+    document.body
+  );
+}
 
 export default function Inventory() {
   const [inventory, setInventory] = useState([]);
-  const [products, setProducts]   = useState([]);
-  const [bins, setBins]           = useState([]);
-  const [loading, setLoading]     = useState(true);
-  const [showModal, setShowModal] = useState(false);
-  const [editing, setEditing]     = useState(null);
-  const [form, setForm]           = useState({ product: "", bin: "", quantity: "" });
-  const [saving, setSaving]       = useState(false);
-  const [search, setSearch]       = useState("");
+  const [products,  setProducts]  = useState([]);
+  const [bins,      setBins]      = useState([]);
+  const [count,   setCount]   = useState(0);
+  const [page,    setPage]    = useState(1);
+  const [search,  setSearch]  = useState("");
+  const [loading, setLoading] = useState(false);
+  const [show,    setShow]    = useState(false);
+  const [saving,  setSaving]  = useState(false);
+  const [editing, setEditing] = useState(null);
 
-  useEffect(() => { fetchAll(); }, []);
+  const [fProduct, setFProduct] = useState("");
+  const [fBin,     setFBin]     = useState("");
+  const [fQty,     setFQty]     = useState("0");
 
-  const fetchAll = async () => {
+  useEffect(() => { load(1); loadMeta(); }, []); // eslint-disable-line
+
+  const load = async (p = 1) => {
     setLoading(true);
     try {
-      const [inv, p, b] = await Promise.all([
-        API.get("product/inventories/"),
-        API.get("product/products/"),
-        API.get("warehouse/bins/"),
+      const res = await API.get(`product/inventories/?page=${p}&_=${Date.now()}`);
+      setInventory(toArr(res.data));
+      setCount(res.data?.count ?? toArr(res.data).length);
+      setPage(p);
+    } catch (e) { console.error(e); }
+    finally { setLoading(false); }
+  };
+
+  const loadMeta = async () => {
+    try {
+      const [p, b] = await Promise.all([
+        API.get("product/products/?page_size=200"),
+        API.get("warehouse/bins/?page_size=200"),
       ]);
-      setInventory(Array.isArray(inv.data) ? inv.data : inv.data.results || []);
-      setProducts(Array.isArray(p.data) ? p.data : p.data.results || []);
-      setBins(Array.isArray(b.data) ? b.data : b.data.results || []);
-    } catch (err) {
-      console.error(err);
-    } finally {
-      setLoading(false);
-    }
+      setProducts(toArr(p.data));
+      setBins(toArr(b.data));
+    } catch (e) { console.error(e); }
   };
 
   const openAdd = () => {
-    setEditing(null);
-    setForm({ product: "", bin: "", quantity: "" });
-    setShowModal(true);
+    setEditing(null); setFProduct(""); setFBin(""); setFQty("0");
+    setShow(true);
   };
 
   const openEdit = (item) => {
     setEditing(item);
-    setForm({ product: item.product, bin: item.bin, quantity: item.quantity });
-    setShowModal(true);
+    setFProduct(item.product?.toString() || "");
+    setFBin(item.bin?.toString() || "");
+    setFQty(item.quantity?.toString() || "0");
+    setShow(true);
   };
 
-  const handleSubmit = async () => {
-    if (!form.product || !form.bin || !form.quantity) return;
+  const handleSave = async () => {
     setSaving(true);
     try {
+      const payload = { product: fProduct, bin: fBin, quantity: Number(fQty) };
       editing
-        ? await API.put(`product/inventory/${editing.id}/`, form)
-        : await API.post("product/inventory/", form);
-      setShowModal(false);
-      fetchAll();
-    } catch (err) {
-      console.error(err);
-    } finally {
-      setSaving(false);
-    }
+        ? await API.put(`product/inventories/${editing.id}/`, payload)
+        : await API.post("product/inventories/", payload);
+      setShow(false);
+      load(page);
+    } catch (e) { alert(JSON.stringify(e.response?.data)); }
+    finally { setSaving(false); }
   };
 
   const handleDelete = async (id) => {
     if (!window.confirm("Delete this inventory record?")) return;
-    try {
-      await API.delete(`product/inventory/${id}/`);
-      fetchAll();
-    } catch (err) {
-      console.error(err);
-    }
+    await API.delete(`product/inventories/${id}/`);
+    load(page);
   };
 
-  const getQtyClass = (qty) =>
-    qty === 0 ? "qty-zero" : qty <= 5 ? "qty-low" : "qty-ok";
+  /* qty color */
+  const qtyBadge = (q) => q === 0 ? "badge badge-danger" : q <= 5 ? "badge badge-warning" : "badge badge-success";
 
-  const filtered = inventory.filter((item) => {
-    const name = item.product_name || "";
-    const bin  = item.bin_code     || "";
-    return (
-      name.toLowerCase().includes(search.toLowerCase()) ||
-      bin.toLowerCase().includes(search.toLowerCase())
-    );
-  });
+  /* filter by search */
+  const filtered = search
+    ? inventory.filter(i => (i.product_name || "").toLowerCase().includes(search.toLowerCase()) || (i.bin_code || "").toLowerCase().includes(search.toLowerCase()))
+    : inventory;
 
   return (
-    <div className="inventory-page">
-
-      {/* Header */}
-      <div className="page-header">
+    <div className="pg">
+      <div className="pg-header">
         <div>
-          <h1 className="page-title">Inventory</h1>
-          <p className="page-subtitle">{inventory.length} record{inventory.length !== 1 ? "s" : ""} tracked</p>
+          <h1 className="pg-title">Inventory</h1>
+          <p className="pg-sub">{count} records tracked</p>
         </div>
-        <div className="header-controls">
-          <input
-            className="search-input"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search product or bin…"
-          />
+        <div className="pg-header-right">
+          <input className="pg-search" placeholder="Search product or bin…" value={search}
+            onChange={e => setSearch(e.target.value)} />
           <button className="btn-primary" onClick={openAdd}>+ Add Record</button>
         </div>
       </div>
 
-      {/* Content */}
       {loading ? (
         <div className="spinner-wrap"><div className="spinner" /></div>
-      ) : filtered.length === 0 ? (
+      ) : !filtered.length ? (
         <div className="empty-state">
           <span className="empty-icon">📋</span>
-          <p className="empty-title">{search ? "No results found" : "No inventory records"}</p>
-          <p className="empty-text">{search ? "Try a different search term." : "Assign products to bins to track inventory."}</p>
+          <p className="empty-title">No inventory records</p>
+          <p className="empty-text">Assign products to bins to track inventory.</p>
         </div>
       ) : (
-        <div className="table-wrap">
-          <table className="data-table">
+        <div className="tbl-wrap">
+          <table className="tbl">
             <thead>
               <tr>
-                <th>Product</th>
-                <th>SKU</th>
-                <th>Bin</th>
-                <th>Quantity</th>
-                <th>Actions</th>
+                <th style={{width:"30%"}}>Product</th>
+                <th style={{width:"16%"}}>SKU</th>
+                <th style={{width:"18%"}}>Bin</th>
+                <th style={{width:"14%"}}>Quantity</th>
+                <th style={{width:"22%"}}>Actions</th>
               </tr>
             </thead>
             <tbody>
-              {filtered.map((item) => (
+              {filtered.map(item => (
                 <tr key={item.id}>
-                  <td className="td-name">{item.product_name || `Product #${item.product}`}</td>
+                  <td className="td-bold">{item.product_name || `#${item.product}`}</td>
                   <td>
                     {item.product_sku
-                      ? <span className="mono-tag">{item.product_sku}</span>
-                      : <span className="td-muted">—</span>
-                    }
+                      ? <span className="td-mono">{item.product_sku}</span>
+                      : <span className="td-muted">—</span>}
                   </td>
-                  <td className="td-muted">{item.bin_code || `Bin #${item.bin}`}</td>
                   <td>
-                    <span className={`qty-badge ${getQtyClass(item.quantity)}`}>
-                      {item.quantity}
+                    <span style={{background:"#F0EFEC", padding:"3px 9px", borderRadius:4, fontSize:12, fontFamily:"var(--font-mono)", fontWeight:500}}>
+                      {item.bin_code || `#${item.bin}`}
                     </span>
                   </td>
                   <td>
-                    <div className="td-actions">
-                      <button className="btn-edit"   onClick={() => openEdit(item)}>Edit</button>
-                      <button className="btn-delete" onClick={() => handleDelete(item.id)}>Delete</button>
+                    <span className={qtyBadge(item.quantity)} style={{fontSize:13, fontWeight:700}}>
+                      {item.quantity} units
+                    </span>
+                  </td>
+                  <td>
+                    <div className="td-acts">
+                      <button className="btn-edit" onClick={() => openEdit(item)}>Edit</button>
+                      <button className="btn-del"  onClick={() => handleDelete(item.id)}>Delete</button>
                     </div>
                   </td>
                 </tr>
@@ -153,52 +174,30 @@ export default function Inventory() {
         </div>
       )}
 
-      {/* Modal */}
-      {showModal && (
-        <div className="modal-overlay">
-          <div className="modal">
-            <h2 className="modal-title">{editing ? "Edit Record" : "New Inventory Record"}</h2>
+      <PageNav page={page} count={count} pageSize={10} onPage={p => load(p)} />
 
-            <div className="form-group">
-              <label className="form-label">Product</label>
-              <select className="form-select" value={form.product}
-                onChange={(e) => setForm({ ...form, product: e.target.value })}>
-                <option value="">Select product</option>
-                {products.map((p) => (
-                  <option key={p.id} value={p.id}>{p.name} — {p.sku}</option>
-                ))}
-              </select>
-            </div>
-
-            <div className="form-group">
-              <label className="form-label">Bin</label>
-              <select className="form-select" value={form.bin}
-                onChange={(e) => setForm({ ...form, bin: e.target.value })}>
-                <option value="">Select bin</option>
-                {bins.filter((b) => b.is_available).map((b) => (
-                  <option key={b.id} value={b.id}>{b.bin_code}</option>
-                ))}
-              </select>
-            </div>
-
-            <div className="form-group">
-              <label className="form-label">Quantity</label>
-              <input className="form-input" type="number" min="0"
-                value={form.quantity}
-                onChange={(e) => setForm({ ...form, quantity: e.target.value })}
-                placeholder="e.g. 100" />
-            </div>
-
-            <div className="modal-actions">
-              <button className="btn-cancel" onClick={() => setShowModal(false)}>Cancel</button>
-              <button className="btn-save" onClick={handleSubmit} disabled={saving}>
-                {saving ? "Saving…" : editing ? "Update" : "Create"}
-              </button>
-            </div>
+      {show && (
+        <Modal title={editing ? "Edit Record" : "New Inventory Record"} onClose={() => setShow(false)} onSave={handleSave} saving={saving}>
+          <div className="form-group">
+            <label className="form-label">Product</label>
+            <select className="form-select" value={fProduct} onChange={e => setFProduct(e.target.value)}>
+              <option value="">Select product…</option>
+              {products.map(p => <option key={p.id} value={p.id}>{p.name} — {p.sku}</option>)}
+            </select>
           </div>
-        </div>
+          <div className="form-group">
+            <label className="form-label">Bin</label>
+            <select className="form-select" value={fBin} onChange={e => setFBin(e.target.value)}>
+              <option value="">Select bin…</option>
+              {bins.filter(b => b.is_available).map(b => <option key={b.id} value={b.id}>{b.bin_code}</option>)}
+            </select>
+          </div>
+          <div className="form-group">
+            <label className="form-label">Quantity</label>
+            <input className="form-input" type="number" min="0" value={fQty} onChange={e => setFQty(e.target.value)} />
+          </div>
+        </Modal>
       )}
-
     </div>
   );
 }

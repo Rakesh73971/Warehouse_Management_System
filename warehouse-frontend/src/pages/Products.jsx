@@ -1,154 +1,164 @@
 import React, { useEffect, useState } from "react";
+import ReactDOM from "react-dom";
 import API from "../api/axios";
-import "./Products.css";
+import "./pages.css";
+import PageNav from "./PageNav.jsx";
+
+const toArr = (d) => Array.isArray(d) ? d : d?.results || [];
+
+function Modal({ title, onClose, onSave, saving, children }) {
+  return ReactDOM.createPortal(
+    <div
+      onClick={e => e.target === e.currentTarget && onClose()}
+      style={{ position:"fixed", inset:0, background:"rgba(26,25,22,0.52)", display:"flex", alignItems:"center", justifyContent:"center", zIndex:99999, backdropFilter:"blur(3px)" }}
+    >
+      <div
+        onClick={e => e.stopPropagation()}
+        style={{ background:"#fff", borderRadius:"12px", padding:"36px", width:"500px", maxWidth:"95vw", maxHeight:"90vh", overflowY:"auto", boxShadow:"0 24px 64px rgba(0,0,0,0.2)", position:"relative", zIndex:100000 }}
+      >
+        <h2 className="modal-title">{title}</h2>
+        {children}
+        <div className="modal-actions">
+          <button className="btn-cancel" onClick={onClose}>Cancel</button>
+          <button className="btn-save" disabled={saving} onClick={onSave}>{saving ? "Saving…" : "Save"}</button>
+        </div>
+      </div>
+    </div>,
+    document.body
+  );
+}
 
 export default function Products() {
-  const [products, setProducts]       = useState([]);
-  const [categories, setCategories]   = useState([]);
+  const [products,     setProducts]     = useState([]);
+  const [categories,   setCategories]   = useState([]);
   const [storageTypes, setStorageTypes] = useState([]);
-  const [loading, setLoading]         = useState(true);
-  const [showModal, setShowModal]     = useState(false);
-  const [editing, setEditing]         = useState(null);
-  const [form, setForm]               = useState({ name: "", sku: "", description: "", storage_type: "", category: "", weight: "" });
-  const [saving, setSaving]           = useState(false);
-  const [search, setSearch]           = useState("");
+  const [count,   setCount]   = useState(0);
+  const [page,    setPage]    = useState(1);
+  const [search,  setSearch]  = useState("");
+  const [loading, setLoading] = useState(false);
+  const [show,    setShow]    = useState(false);
+  const [saving,  setSaving]  = useState(false);
+  const [editing, setEditing] = useState(null);
 
-  useEffect(() => { fetchAll(); }, []);
+  const [fName, setFName] = useState("");
+  const [fSku,  setFSku]  = useState("");
+  const [fDesc, setFDesc] = useState("");
+  const [fCat,  setFCat]  = useState("");
+  const [fSt,   setFSt]   = useState("");
+  const [fWt,   setFWt]   = useState("");
 
-  const fetchAll = async () => {
+  useEffect(() => { load(1); loadMeta(); }, []); // eslint-disable-line
+
+  const load = async (p = 1, q = search) => {
     setLoading(true);
     try {
-      const [p, c, s] = await Promise.all([
-        API.get("product/products/"),
-        API.get("product/categories/"),
-        API.get("warehouse/storagetypes/"),
-      ]);
-      setProducts(Array.isArray(p.data) ? p.data : p.data.results || []);
-      setCategories(Array.isArray(c.data) ? c.data : c.data.results || []);
-      setStorageTypes(Array.isArray(s.data) ? s.data : s.data.results || []);
-    } catch (err) {
-      console.error(err);
-    } finally {
-      setLoading(false);
-    }
+      const res = await API.get(`product/products/?page=${p}&search=${q}&_=${Date.now()}`);
+      setProducts(toArr(res.data));
+      setCount(res.data?.count ?? toArr(res.data).length);
+      setPage(p);
+    } catch (e) { console.error(e); }
+    finally { setLoading(false); }
+  };
+
+  const loadMeta = async () => {
+    try {
+      const [c, s] = await Promise.all([API.get("product/categories/"), API.get("warehouse/storagetypes/")]);
+      setCategories(toArr(c.data));
+      setStorageTypes(toArr(s.data));
+    } catch (e) { console.error(e); }
   };
 
   const openAdd = () => {
     setEditing(null);
-    setForm({ name: "", sku: "", description: "", storage_type: "", category: "", weight: "" });
-    setShowModal(true);
+    setFName(""); setFSku(""); setFDesc(""); setFCat(""); setFSt(""); setFWt("");
+    setShow(true);
   };
 
   const openEdit = (p) => {
     setEditing(p);
-    setForm({
-      name:         p.name,
-      sku:          p.sku,
-      description:  p.description || "",
-      storage_type: p.storage_type,
-      category:     p.category,
-      weight:       p.weight || "",
-    });
-    setShowModal(true);
+    setFName(p.name || ""); setFSku(p.sku || ""); setFDesc(p.description || "");
+    setFCat(p.category?.toString() || ""); setFSt(p.storage_type?.toString() || "");
+    setFWt(p.weight?.toString() || "");
+    setShow(true);
   };
 
-  const handleSubmit = async () => {
-    if (!form.name.trim() || !form.sku.trim()) return;
+  const handleSave = async () => {
     setSaving(true);
     try {
+      const payload = { name: fName, sku: fSku, description: fDesc, category: fCat || null, storage_type: fSt || null, weight: fWt || null };
       editing
-        ? await API.put(`product/products/${editing.id}/`, form)
-        : await API.post("product/products/", form);
-      setShowModal(false);
-      fetchAll();
-    } catch (err) {
-      console.error(err);
-    } finally {
-      setSaving(false);
-    }
+        ? await API.put(`product/products/${editing.id}/`, payload)
+        : await API.post("product/products/", payload);
+      setShow(false);
+      load(page);
+    } catch (e) { alert(JSON.stringify(e.response?.data)); }
+    finally { setSaving(false); }
   };
 
   const handleDelete = async (id) => {
     if (!window.confirm("Delete this product?")) return;
-    try {
-      await API.delete(`product/products/${id}/`);
-      fetchAll();
-    } catch (err) {
-      console.error(err);
-    }
+    await API.delete(`product/products/${id}/`);
+    load(page);
   };
 
-  const filtered = products.filter(
-    (p) =>
-      p.name.toLowerCase().includes(search.toLowerCase()) ||
-      p.sku.toLowerCase().includes(search.toLowerCase())
-  );
-
   return (
-    <div className="products-page">
-
-      {/* Header */}
-      <div className="page-header">
+    <div className="pg">
+      <div className="pg-header">
         <div>
-          <h1 className="page-title">Products</h1>
-          <p className="page-subtitle">{products.length} product{products.length !== 1 ? "s" : ""} in catalogue</p>
+          <h1 className="pg-title">Products</h1>
+          <p className="pg-sub">{count} products in catalogue</p>
         </div>
-        <div className="header-controls">
-          <input
-            className="search-input"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search name or SKU…"
-          />
+        <div className="pg-header-right">
+          <input className="pg-search" placeholder="Search products…" value={search}
+            onChange={e => { setSearch(e.target.value); load(1, e.target.value); }} />
           <button className="btn-primary" onClick={openAdd}>+ Add Product</button>
         </div>
       </div>
 
-      {/* Content */}
       {loading ? (
         <div className="spinner-wrap"><div className="spinner" /></div>
-      ) : filtered.length === 0 ? (
+      ) : !products.length ? (
         <div className="empty-state">
           <span className="empty-icon">🏷️</span>
-          <p className="empty-title">{search ? "No results found" : "No products yet"}</p>
-          <p className="empty-text">{search ? "Try a different search term." : "Add your first product to the catalogue."}</p>
+          <p className="empty-title">No products found</p>
+          <p className="empty-text">Add your first product to the catalogue.</p>
         </div>
       ) : (
-        <div className="table-wrap">
-          <table className="data-table">
+        <div className="tbl-wrap">
+          <table className="tbl">
             <thead>
               <tr>
-                <th>Name</th>
-                <th>SKU</th>
-                <th>Category</th>
-                <th>Storage Type</th>
-                <th>Weight</th>
-                <th>Created</th>
-                <th>Actions</th>
+                <th style={{width:"30%"}}>Product</th>
+                <th style={{width:"15%"}}>SKU</th>
+                <th style={{width:"15%"}}>Category</th>
+                <th style={{width:"15%"}}>Storage Type</th>
+                <th style={{width:"10%"}}>Weight</th>
+                <th style={{width:"15%"}}>Actions</th>
               </tr>
             </thead>
             <tbody>
-              {filtered.map((p) => (
+              {products.map(p => (
                 <tr key={p.id}>
-                  <td className="td-name">{p.name}</td>
-                  <td><span className="mono-tag">{p.sku}</span></td>
+                  <td>
+                    <p style={{fontWeight:600, margin:"0 0 2px", fontSize:14}}>{p.name}</p>
+                    {p.description && <p style={{margin:0, fontSize:12, color:"var(--text-muted)", overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap", maxWidth:240}}>{p.description}</p>}
+                  </td>
+                  <td><span className="td-mono">{p.sku}</span></td>
                   <td>
                     {p.category_name
-                      ? <span className="badge-category">{p.category_name}</span>
-                      : <span className="td-muted">—</span>
-                    }
-                  </td>
-                  <td className="td-muted">{p.storage_type_name || `#${p.storage_type}`}</td>
-                  <td className="td-muted">{p.weight ? `${p.weight} kg` : "—"}</td>
-                  <td className="td-date">
-                    {new Date(p.created_at).toLocaleDateString("en-IN", {
-                      day: "numeric", month: "short", year: "numeric",
-                    })}
+                      ? <span className="badge badge-neutral">{p.category_name}</span>
+                      : <span className="td-muted">—</span>}
                   </td>
                   <td>
-                    <div className="td-actions">
-                      <button className="btn-edit"   onClick={() => openEdit(p)}>Edit</button>
-                      <button className="btn-delete" onClick={() => handleDelete(p.id)}>Delete</button>
+                    {p.storage_type_name
+                      ? <span className="badge badge-info">{p.storage_type_name}</span>
+                      : <span className="td-muted">—</span>}
+                  </td>
+                  <td className="td-muted">{p.weight ? `${p.weight} kg` : "—"}</td>
+                  <td>
+                    <div className="td-acts">
+                      <button className="btn-edit" onClick={() => openEdit(p)}>Edit</button>
+                      <button className="btn-del"  onClick={() => handleDelete(p.id)}>Delete</button>
                     </div>
                   </td>
                 </tr>
@@ -158,75 +168,46 @@ export default function Products() {
         </div>
       )}
 
-      {/* Modal */}
-      {showModal && (
-        <div className="modal-overlay">
-          <div className="modal">
-            <h2 className="modal-title">{editing ? "Edit Product" : "New Product"}</h2>
+      <PageNav page={page} count={count} pageSize={10} onPage={p => load(p)} />
 
-            <div className="form-row">
-              <div className="form-group">
-                <label className="form-label">Product Name</label>
-                <input className="form-input" value={form.name}
-                  onChange={(e) => setForm({ ...form, name: e.target.value })}
-                  placeholder="e.g. Steel Bolt M8" />
-              </div>
-              <div className="form-group">
-                <label className="form-label">SKU</label>
-                <input className="form-input" value={form.sku}
-                  onChange={(e) => setForm({ ...form, sku: e.target.value })}
-                  placeholder="e.g. SKU-001" />
-              </div>
-            </div>
-
-            <div className="form-row">
-              <div className="form-group">
-                <label className="form-label">Category</label>
-                <select className="form-select" value={form.category}
-                  onChange={(e) => setForm({ ...form, category: e.target.value })}>
-                  <option value="">Select category</option>
-                  {categories.map((c) => (
-                    <option key={c.id} value={c.id}>{c.name}</option>
-                  ))}
-                </select>
-              </div>
-              <div className="form-group">
-                <label className="form-label">Storage Type</label>
-                <select className="form-select" value={form.storage_type}
-                  onChange={(e) => setForm({ ...form, storage_type: e.target.value })}>
-                  <option value="">Select type</option>
-                  {storageTypes.map((s) => (
-                    <option key={s.id} value={s.id}>{s.name}</option>
-                  ))}
-                </select>
-              </div>
-            </div>
-
+      {show && (
+        <Modal title={editing ? "Edit Product" : "New Product"} onClose={() => setShow(false)} onSave={handleSave} saving={saving}>
+          <div className="form-row">
             <div className="form-group">
-              <label className="form-label">Weight (kg)</label>
-              <input className="form-input" type="number" step="0.01" min="0"
-                value={form.weight}
-                onChange={(e) => setForm({ ...form, weight: e.target.value })}
-                placeholder="e.g. 1.5" />
+              <label className="form-label">Name</label>
+              <input className="form-input" value={fName} onChange={e => setFName(e.target.value)} placeholder="e.g. Steel Bolt" />
             </div>
-
             <div className="form-group">
-              <label className="form-label">Description</label>
-              <textarea className="form-textarea" value={form.description}
-                onChange={(e) => setForm({ ...form, description: e.target.value })}
-                placeholder="Optional description…" />
-            </div>
-
-            <div className="modal-actions">
-              <button className="btn-cancel" onClick={() => setShowModal(false)}>Cancel</button>
-              <button className="btn-save" onClick={handleSubmit} disabled={saving}>
-                {saving ? "Saving…" : editing ? "Update" : "Create"}
-              </button>
+              <label className="form-label">SKU</label>
+              <input className="form-input" value={fSku} onChange={e => setFSku(e.target.value)} placeholder="e.g. SKU-001" />
             </div>
           </div>
-        </div>
+          <div className="form-row">
+            <div className="form-group">
+              <label className="form-label">Category</label>
+              <select className="form-select" value={fCat} onChange={e => setFCat(e.target.value)}>
+                <option value="">Select…</option>
+                {categories.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+              </select>
+            </div>
+            <div className="form-group">
+              <label className="form-label">Storage Type</label>
+              <select className="form-select" value={fSt} onChange={e => setFSt(e.target.value)}>
+                <option value="">Select…</option>
+                {storageTypes.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
+              </select>
+            </div>
+          </div>
+          <div className="form-group">
+            <label className="form-label">Weight (kg)</label>
+            <input className="form-input" type="number" step="0.01" value={fWt} onChange={e => setFWt(e.target.value)} placeholder="e.g. 1.5" />
+          </div>
+          <div className="form-group">
+            <label className="form-label">Description</label>
+            <textarea className="form-textarea" value={fDesc} onChange={e => setFDesc(e.target.value)} placeholder="Optional…" />
+          </div>
+        </Modal>
       )}
-
     </div>
   );
 }
