@@ -1,40 +1,32 @@
 import { Link, useLocation } from "react-router-dom";
+import "./Sidebar.css";
 
-function Sidebar() {
-  const location = useLocation(); // To highlight active link
+const navItems = [
+  { to: "/app/dashboard",  label: "Dashboard",  icon: "⬛" },
+  { to: "/app/warehouses", label: "Warehouses", icon: "🏭" },
+  { to: "/app/products",   label: "Products",   icon: "🏷️" },
+  { to: "/app/inventory",  label: "Inventory",  icon: "📋" },
+  { to: "/app/orders",     label: "Orders",     icon: "📑" },
+];
 
-  const links = [
-    { path: "/app/dashboard", label: "Dashboard" },
-    { path: "/app/warehouses", label: "Warehouses" },
-    { path: "/app/zones", label: "Zones" },
-    { path: "/app/racks", label: "Racks" },
-    { path: "/app/bins", label: "Bins" },
-    { path: "/app/products", label: "Products" },
-    { path: "/app/inventory", label: "Inventory" },
-    { path: "/app/orders", label: "Orders" },
-  ];
+export default function Sidebar() {
+  const { pathname } = useLocation();
 
   return (
-    <div
-      className="bg-light border-end d-flex flex-column"
-      style={{ width: "220px", minHeight: "100vh" }}
-    >
-      <div className="p-3 fs-5 fw-bold border-bottom">Menu</div>
-      <div className="list-group list-group-flush flex-grow-1">
-        {links.map((link) => (
+    <aside className="sidebar">
+      <p className="sidebar-section-label">Menu</p>
+      <nav className="sidebar-nav">
+        {navItems.map(({ to, label, icon }) => (
           <Link
-            key={link.path}
-            to={link.path}
-            className={`list-group-item list-group-item-action ${
-              location.pathname === link.path ? "active fw-bold" : ""
-            }`}
+            key={to}
+            to={to}
+            className={`sidebar-link ${pathname.startsWith(to) ? "active" : ""}`}
           >
-            {link.label}
+            <span className="sidebar-icon">{icon}</span>
+            <span className="sidebar-label">{label}</span>
           </Link>
         ))}
-      </div>
-    </div>
+      </nav>
+    </aside>
   );
 }
-
-export default Sidebar;
