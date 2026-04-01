@@ -1,6 +1,7 @@
 import React from "react";
 import ReactDOM from "react-dom";
 import { LVL } from "./warehouseConstants.js";
+/* eslint-disable react-refresh/only-export-components */
 
 
 export const MODAL_CLOSED = {

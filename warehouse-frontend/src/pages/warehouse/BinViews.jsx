@@ -330,11 +330,12 @@ export function BinDetail({ bin }) {
   const [invLoading,  setInvLoading]  = useState(false);
   const [showAdd,     setShowAdd]     = useState(false);
   const [showRemove,  setShowRemove]  = useState(false);
+  const binId = bin?.id;
 
   useEffect(() => {
-    if (!bin) return;
-    fetchInventory(bin.id);
-  }, [bin?.id]);
+    if (!binId) return;
+    fetchInventory(binId);
+  }, [binId]);
 
   const fetchInventory = async (binId) => {
     setInvLoading(true);
