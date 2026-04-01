@@ -8,6 +8,7 @@ import Inventory from "./pages/Inventory";
 import Orders    from "./pages/Order";
 import Login     from "./pages/Login";           // your login file is Log.jsx
 import Register  from "./pages/Register";
+import ToastHost from "./components/ToastHost";
 
 /* ── Protected Route ── */
 const PrivateRoute = ({ children }) => {
@@ -45,6 +46,7 @@ export default function App() {
         <Route path="*" element={<h2 style={{ padding: 40, fontFamily: "sans-serif" }}>Page Not Found</h2>} />
 
       </Routes>
+      <ToastHost />
     </BrowserRouter>
   );
 }
