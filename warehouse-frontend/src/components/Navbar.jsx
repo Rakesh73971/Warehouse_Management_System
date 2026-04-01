@@ -5,14 +5,25 @@ import "./Navbar.css";
 
 export default function Navbar() {
   const navigate = useNavigate();
-  const [user, setUser] = useState(null);
+  const [user, setUser] = useState(() => {
+    const cachedName = localStorage.getItem("user_name");
+    return cachedName ? { full_name: cachedName, email: "" } : null;
+  });
   const [open, setOpen] = useState(false);
   const ref = useRef(null);
+  const getName = (obj) =>
+    obj?.full_name || obj?.name || obj?.username || "";
 
   useEffect(() => {
+    const cachedName = localStorage.getItem("user_name");
+
     API.get("accounts/profile/")
-      .then(r => setUser(r.data))
-      .catch(() => setUser({ full_name: "User", email: "" }));
+      .then((r) => {
+        const apiName = getName(r.data) || cachedName || "User";
+        localStorage.setItem("user_name", apiName);
+        setUser({ ...r.data, full_name: apiName });
+      })
+      .catch(() => setUser({ full_name: cachedName || "User", email: "" }));
   }, []);
 
   useEffect(() => {
@@ -23,11 +34,6 @@ export default function Navbar() {
 
   const name     = user?.full_name || "User";
   const initials = name.split(" ").map(w => w[0]).join("").slice(0, 2).toUpperCase();
-  const greeting = ["morning","morning","morning","morning","morning","morning",
-                    "morning","morning","morning","morning","morning","morning",
-                    "afternoon","afternoon","afternoon","afternoon","afternoon",
-                    "evening","evening","evening","evening","evening","evening","evening"]
-                   [new Date().getHours()];
 
   return (
     <nav className="navbar">
@@ -42,7 +48,10 @@ export default function Navbar() {
 
       {/* User */}
       <div className="navbar-user" ref={ref}>
-        <p className="navbar-greeting">Good {greeting}, <strong>{name}</strong></p>
+        <p className="navbar-greeting">
+          <span className="navbar-greeting-label">User</span>
+          <strong>{name}</strong>
+        </p>
         <button className="navbar-avatar" onClick={() => setOpen(o => !o)}>
           {initials}
         </button>
@@ -57,7 +66,7 @@ export default function Navbar() {
               </div>
             </div>
             <hr className="navbar-dropdown-hr" />
-            <button className="navbar-signout" onClick={() => { localStorage.removeItem("token"); navigate("/"); }}>
+            <button className="navbar-signout" onClick={() => { localStorage.removeItem("token"); localStorage.removeItem("user_name"); navigate("/"); }}>
               Sign out
             </button>
           </div>
