@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import API from "../api/axios";
 import "./Dashboard.css";
 
@@ -47,8 +47,6 @@ export default function Dashboard() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => { fetchAll(); }, []);
-
-  const toArr = (data) => (Array.isArray(data) ? data : data.results || []);
 
   const fetchAll = async () => {
     try {

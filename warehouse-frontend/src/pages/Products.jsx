@@ -3,6 +3,7 @@ import ReactDOM from "react-dom";
 import API from "../api/axios";
 import "./pages.css";
 import PageNav from "./PageNav.jsx";
+import { toast } from "../components/toast";
 
 const toArr = (d) => Array.isArray(d) ? d : d?.results || [];
 
@@ -91,14 +92,22 @@ export default function Products() {
         : await API.post("product/products/", payload);
       setShow(false);
       load(page);
-    } catch (e) { alert(JSON.stringify(e.response?.data)); }
+      toast(editing ? "Product updated" : "Product created", "success");
+    } catch {
+      toast("Save failed", "error");
+    }
     finally { setSaving(false); }
   };
 
   const handleDelete = async (id) => {
     if (!window.confirm("Delete this product?")) return;
-    await API.delete(`product/products/${id}/`);
-    load(page);
+    try {
+      await API.delete(`product/products/${id}/`);
+      toast("Product deleted", "success");
+      load(page);
+    } catch {
+      toast("Delete failed", "error");
+    }
   };
 
   return (
@@ -125,7 +134,7 @@ export default function Products() {
         </div>
       ) : (
         <div className="tbl-wrap">
-          <table className="tbl">
+          <table className="tbl products-tbl">
             <thead>
               <tr>
                 <th style={{width:"30%"}}>Product</th>
@@ -133,7 +142,7 @@ export default function Products() {
                 <th style={{width:"15%"}}>Category</th>
                 <th style={{width:"15%"}}>Storage Type</th>
                 <th style={{width:"10%"}}>Weight</th>
-                <th style={{width:"15%"}}>Actions</th>
+                <th className="actions-col" style={{width:"15%"}}>Actions</th>
               </tr>
             </thead>
             <tbody>
@@ -155,10 +164,24 @@ export default function Products() {
                       : <span className="td-muted">—</span>}
                   </td>
                   <td className="td-muted">{p.weight ? `${p.weight} kg` : "—"}</td>
-                  <td>
+                  <td className="actions-cell">
                     <div className="td-acts">
-                      <button className="btn-edit" onClick={() => openEdit(p)}>Edit</button>
-                      <button className="btn-del"  onClick={() => handleDelete(p.id)}>Delete</button>
+                      <button
+                        type="button"
+                        className="btn-edit"
+                        title="Edit product"
+                        onClick={() => openEdit(p)}
+                      >
+                        Edit
+                      </button>
+                      <button
+                        type="button"
+                        className="btn-del"
+                        title="Delete product"
+                        onClick={() => handleDelete(p.id)}
+                      >
+                        Delete
+                      </button>
                     </div>
                   </td>
                 </tr>

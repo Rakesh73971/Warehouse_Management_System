@@ -43,8 +43,9 @@
 .btn-primary:hover { opacity: 0.82; }
 
 /* ── Table ── */
-.tbl-wrap { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; overflow: hidden; }
+.tbl-wrap { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; overflow: auto; }
 .tbl      { width: 100%; border-collapse: collapse; }
+.products-tbl { min-width: 980px; }
 .tbl thead th { padding: 11px 20px; text-align: left; font-size: 11px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.8px; background: var(--bg); border-bottom: 1px solid var(--border); }
 .tbl tbody tr { border-bottom: 1px solid var(--border); transition: background 0.12s; }
 .tbl tbody tr:last-child { border-bottom: none; }
@@ -53,7 +54,7 @@
 .td-bold  { font-weight: 500; }
 .td-muted { color: var(--text-sub); }
 .td-mono  { font-family: var(--font-mono); font-size: 12px; background: var(--accent-light); padding: 3px 8px; border-radius: 4px; display: inline-block; }
-.td-acts  { display: flex; gap: 6px; }
+.td-acts  { display: flex; gap: 6px; flex-wrap: nowrap; white-space: nowrap; }
 
 /* ── Badges ── */
 .badge         { display: inline-block; font-size: 11px; font-weight: 600; padding: 3px 9px; border-radius: 4px; }
@@ -68,6 +69,60 @@
 .btn-edit:hover { background: var(--border); }
 .btn-del  { background: var(--danger-light); border: none; border-radius: 5px; padding: 5px 11px; font-size: 12px; font-weight: 500; cursor: pointer; color: var(--danger); font-family: var(--font-body); transition: opacity 0.15s; }
 .btn-del:hover  { opacity: 0.75; }
+.products-tbl .actions-col,
+.products-tbl .actions-cell {
+  position: sticky;
+  right: 0;
+  background: var(--surface);
+}
+.products-tbl .actions-col {
+  z-index: 2;
+}
+.products-tbl tbody tr:hover .actions-cell {
+  background: var(--accent-light);
+}
+
+/* subtle polish */
+.tbl-wrap { box-shadow: 0 8px 28px rgba(26, 25, 22, 0.04); }
+.pg-header { gap: 16px; }
+
+/* ── Focus (keyboard) ── */
+.btn-primary:focus-visible,
+.btn-edit:focus-visible,
+.btn-del:focus-visible,
+.pg-search:focus-visible,
+.form-input:focus-visible,
+.form-select:focus-visible,
+.form-textarea:focus-visible {
+  outline: 3px solid rgba(26, 25, 22, 0.18);
+  outline-offset: 2px;
+}
+
+/* ── Toast ── */
+.toast-host {
+  position: fixed;
+  right: 18px;
+  bottom: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  z-index: 200000;
+  pointer-events: none;
+}
+.toast {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 10px 12px;
+  box-shadow: 0 12px 40px rgba(26, 25, 22, 0.12);
+  color: var(--text);
+  font-size: 13px;
+  max-width: min(360px, 88vw);
+  animation: fadeUp 0.18s ease;
+}
+.toast.success { border-color: rgba(26, 122, 74, 0.35); }
+.toast.error   { border-color: rgba(192, 57, 43, 0.35); }
+.toast.info    { border-color: rgba(29, 78, 216, 0.28); }
 
 /* ── States ── */
 .spinner-wrap { display: flex; justify-content: center; padding: 80px; }

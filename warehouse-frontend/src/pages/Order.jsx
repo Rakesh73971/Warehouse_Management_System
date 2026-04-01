@@ -3,6 +3,7 @@ import ReactDOM from "react-dom";
 import API from "../api/axios";
 import "./pages.css";
 import PageNav from "./PageNav.jsx";
+import { toast } from "../components/toast";
 
 const toArr  = (d) => Array.isArray(d) ? d : d?.results || [];
 const STATUS = ["PENDING", "APPROVED", "REJECTED", "COMPLETED"];
@@ -54,7 +55,7 @@ export default function Order() {
   const [fStatus,   setFStatus]   = useState("PENDING");
   const [fItems,    setFItems]    = useState([{ product: "", quantity: "" }]);
 
-  useEffect(() => { load(1); loadProducts(); }, []); // eslint-disable-line
+  useEffect(() => { load(1); loadProducts(); }, []);
 
   const load = async (p = 1) => {
     setLoading(true);
@@ -102,14 +103,22 @@ export default function Order() {
         : await API.post("order/salesorders/", payload);
       setShow(false);
       load(page);
-    } catch (e) { alert(JSON.stringify(e.response?.data)); }
+      toast(editing ? "Order updated" : "Order created", "success");
+    } catch {
+      toast("Save failed", "error");
+    }
     finally { setSaving(false); }
   };
 
   const handleDelete = async (id) => {
     if (!window.confirm("Delete this order?")) return;
-    await API.delete(`order/salesorders/${id}/`);
-    load(page);
+    try {
+      await API.delete(`order/salesorders/${id}/`);
+      toast("Order deleted", "success");
+      load(page);
+    } catch {
+      toast("Delete failed", "error");
+    }
   };
 
   const updateItem = (i, field, val) => {

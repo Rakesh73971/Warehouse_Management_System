@@ -3,6 +3,7 @@ import ReactDOM from "react-dom";
 import API from "../api/axios";
 import "./pages.css";
 import PageNav from "./PageNav.jsx";
+import { toast } from "../components/toast";
 
 const toArr = (d) => Array.isArray(d) ? d : d?.results || [];
 
@@ -44,7 +45,7 @@ export default function Inventory() {
   const [fBin,     setFBin]     = useState("");
   const [fQty,     setFQty]     = useState("0");
 
-  useEffect(() => { load(1); loadMeta(); }, []); // eslint-disable-line
+  useEffect(() => { load(1); loadMeta(); }, []);
 
   const load = async (p = 1) => {
     setLoading(true);
@@ -90,14 +91,22 @@ export default function Inventory() {
         : await API.post("product/inventories/", payload);
       setShow(false);
       load(page);
-    } catch (e) { alert(JSON.stringify(e.response?.data)); }
+      toast(editing ? "Inventory updated" : "Inventory created", "success");
+    } catch {
+      toast("Save failed", "error");
+    }
     finally { setSaving(false); }
   };
 
   const handleDelete = async (id) => {
     if (!window.confirm("Delete this inventory record?")) return;
-    await API.delete(`product/inventories/${id}/`);
-    load(page);
+    try {
+      await API.delete(`product/inventories/${id}/`);
+      toast("Inventory deleted", "success");
+      load(page);
+    } catch {
+      toast("Delete failed", "error");
+    }
   };
 
   /* qty color */

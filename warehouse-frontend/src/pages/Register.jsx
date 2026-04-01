@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import API from "../api/axios";
+import { toast } from "../components/toast";
 import "./Login.css";
 
 
@@ -20,11 +21,12 @@ function Register() {
     try {
       await API.post("/accounts/register/", form);
 
-      alert("Registered Successfully ✅");
+      toast("Registered successfully. Please login.", "success");
       navigate("/");
 
     } catch (err) {
       console.error(err);
+      toast("Registration failed.", "error");
       setError("Registration Failed ❌");
     }
   };

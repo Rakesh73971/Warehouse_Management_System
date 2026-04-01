@@ -1,6 +1,7 @@
 import React, { useEffect, useReducer, useState } from "react";
 import API from "../api/axios";
 import "./Warehouses.css";
+import { toast } from "../components/toast";
 
 import { LVL, toArr, ts }                    from "./warehouse/warehouseConstants.js";
 import { MODAL_CLOSED, modalReducer, Modal } from "./warehouse/warehouseModal.jsx";
@@ -221,7 +222,7 @@ export default function Warehouses() {
       refresh(m.lvl);
     } catch (e) {
       console.error("[WH] save error:", e.response?.data || e.message);
-      alert("Save failed:\n" + JSON.stringify(e.response?.data || e.message, null, 2));
+      toast("Save failed", "error");
     } finally {
       setSaving(false);
     }
@@ -241,10 +242,11 @@ export default function Warehouses() {
     };
     try {
       await API.delete(`${urls[lvl]}${item.id}/`);
+      toast("Deleted", "success");
       refresh(lvl);
     } catch (e) {
       console.error("[WH] delete error:", e.response?.data || e.message);
-      alert("Delete failed: " + JSON.stringify(e.response?.data || e.message));
+      toast("Delete failed", "error");
     }
   };
 
